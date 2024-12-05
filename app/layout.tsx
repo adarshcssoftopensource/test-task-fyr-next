@@ -1,16 +1,15 @@
 import type { Metadata } from "next";
-import localFont from "next/font/local";
-import "./globals.css";
+import { Inter } from "next/font/google";
 
-const geistSans = localFont({
-  src: "./fonts/GeistVF.woff",
-  variable: "--font-geist-sans",
-  weight: "100 900",
-});
-const geistMono = localFont({
-  src: "./fonts/GeistMonoVF.woff",
-  variable: "--font-geist-mono",
-  weight: "100 900",
+import "./globals.css";
+import { ThemeProvider } from "@/providers/theme-provider";
+import { CustomAside } from "@/components/sidebar";
+import { Header } from "@/components/header";
+// Import Inter font from Google Fonts
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  weight: ["400", "700"], // Specify the weights you need
 });
 
 export const metadata: Metadata = {
@@ -26,9 +25,19 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${inter.variable} ${inter.className} antialiased`}
       >
-        {children}
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          <div className="flex h-screen">
+            <CustomAside />
+            <div className="flex-1 flex flex-col overflow-hidden">
+              <Header />
+              <main className="flex overflow-y-auto p-4 transition-[margin] w-full duration-300 ease-in-out group-[[data-collapsible=icon]]:ml-[--sidebar-width-icon]">
+                {children}
+              </main>
+            </div>
+          </div>
+        </ThemeProvider>
       </body>
     </html>
   );
