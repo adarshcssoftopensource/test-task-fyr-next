@@ -83,26 +83,18 @@ interface IThProps extends ThHTMLAttributes<HTMLTableHeaderCellElement> {
   isColumnBorder?: boolean;
 }
 export const Th: FC<IThProps> = (props) => {
-  const {
-    children,
-    className,
-    isResizable = false,
-    isColumnBorder = true,
-    ...rest
-  } = props;
+  const { children, className, isResizable = false, ...rest } = props;
 
   const classes = cn(
     "bg-zinc-950/10",
     "dark:bg-zinc-950/90",
-    "p-4",
-    "ltr:group-[&:first-child]/Tr:[&:first-child]:rounded-tl-lg ltr:group-[&:first-child]/Tr:[&:last-child]:rounded-tr-lg",
-    "ltr:group-[&:last-child]/Tr:[&:first-child]:rounded-bl-lg ltr:group-[&:last-child]/Tr:[&:last-child]:rounded-br-lg",
-    "rtl:group-[&:first-child]/Tr:[&:first-child]:rounded-tr-lg rtl:group-[&:first-child]/Tr:[&:last-child]:rounded-tl-lg",
-    "rtl:group-[&:last-child]/Tr:[&:first-child]:rounded-br-lg rtl:group-[&:last-child]/Tr:[&:last-child]:rounded-bl-lg",
-    { "shadow-[inset_0_0_0_0.5px_rgba(0,0,0,0.1)]": isColumnBorder },
-    {
-      "dark:shadow-[inset_0_0_0_0.5px_rgba(255,255,255,0.05)]": isColumnBorder,
-    },
+    "p-4 ",
+    "[&:first-child]:rounded-tl [&:first-child]:rounded-bl [&:last-child]:rounded-tr [&:last-child]:rounded-br",
+    "ltr:group-[&:first-child]/Tr:[&:first-child]:rounded-tl ltr:group-[&:first-child]/Tr:[&:last-child]:rounded-tr-xl",
+    "ltr:group-[&:last-child]/Tr:[&:first-child]:rounded-bl-xl ltr:group-[&:last-child]/Tr:[&:last-child]:rounded-br-xl",
+    "rtl:group-[&:first-child]/Tr:[&:first-child]:rounded-tr-xl rtl:group-[&:first-child]/Tr:[&:last-child]:rounded-tl-xl",
+    "rtl:group-[&:last-child]/Tr:[&:first-child]:rounded-br-xl rtl:group-[&:last-child]/Tr:[&:last-child]:rounded-bl-xl",
+
     { relative: isResizable },
     className
   );
@@ -127,10 +119,9 @@ export const ThResizer: FC<IThResizerProps> = (props) => {
       data-component-name="Table/ThResizer"
       className={cn(
         "absolute -right-0.5 top-0 z-10",
-        "h-full w-1",
+        "h-full w-0.5",
         "cursor-col-resize touch-none select-none",
-        "rounded-full",
-        "[@media(hover:hover)]:opacity-0",
+        "rounded-full bg-[#C0C0C0]",
         "[@media(hover:hover){&:hover}]:opacity-100",
         { "bg-blue-500": isResizing, "opacity-100": isResizing },
         className
@@ -156,7 +147,7 @@ export const Td: FC<ITdProps> = (props) => {
     "group-hover/Tr:bg-zinc-500/10",
     "dark:group-even/Tr:bg-zinc-950/50",
     "dark:group-hover/Tr:bg-zinc-950/90",
-    "p-4",
+    "p-2.5",
     className
   );
 

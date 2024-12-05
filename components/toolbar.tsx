@@ -25,6 +25,10 @@ export function Toolbar({
   handleFileChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   handleSearchChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
 }) {
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
   const tabs = [
     {
       value: "doc-search",
@@ -37,7 +41,7 @@ export function Toolbar({
       value: "upload",
       label: "Upload",
       icon: DuoUploadedFile,
-      onClick: handleFileChange,
+      onClick: handleUploadClick,
     },
     {
       value: "collection",
@@ -72,32 +76,17 @@ export function Toolbar({
         {tabs.map((tab) => {
           if (!tab) return null;
           const Icon = tab.icon;
-          const handleClick =
-            tab.value === "upload"
-              ? () => document.getElementById("file-upload")?.click()
-              : undefined;
+
           return (
             <React.Fragment key={tab?.value}>
               <Button
                 variant={"ghost"}
-                onClick={handleClick}
+                onClick={tab?.onClick}
                 className="flex items-center gap-2 min-h-[52px] text-base font-medium text-[#101010] rounded-none"
               >
                 <Icon className="h-4 w-4" />
                 <span className="hidden md:inline">{tab?.label}</span>
               </Button>
-
-              {/* Only show the file input when the upload tab is clicked */}
-              {tab?.value === "upload" && (
-                <input
-                  id="file-upload"
-                  type="file"
-                  multiple
-                  accept="*"
-                  onChange={handleFileChange}
-                  className="hidden"
-                />
-              )}
             </React.Fragment>
           );
         })}
@@ -111,6 +100,16 @@ export function Toolbar({
           onChange={handleSearchChange}
         />
       </div>
+
+      {/* Only show the file input when the upload tab is clicked */}
+      <input
+        ref={fileInputRef}
+        id="file-upload"
+        type="file"
+        accept="*"
+        onChange={handleFileChange}
+        className="hidden"
+      />
     </div>
   );
 }

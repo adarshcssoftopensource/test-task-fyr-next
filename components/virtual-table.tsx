@@ -1,5 +1,5 @@
 "use client";
-import React, { HTMLProps, useRef } from "react";
+import React, { HTMLProps, useCallback, useRef } from "react";
 import {
   ColumnDef,
   ColumnResizeMode,
@@ -45,6 +45,7 @@ import {
   DuoFolderError,
   DuoWaiting,
 } from "@/assets/icons/duotone";
+import useDomRect from "@/hooks/use-dom-rect";
 
 type Status = "Indexed" | "Processing" | "FileError";
 
@@ -142,7 +143,7 @@ const defaultData: CustomFile[] = [
     createdAt: formatDate(new Date()),
     uploadedAt: formatDate(new Date()),
     status: "FileError",
-    tags: ["finance", "report", "Q3"],
+    tags: ["finance", "report"],
   },
 ];
 
@@ -163,16 +164,24 @@ function IndeterminateCheckbox({
     <input
       type="checkbox"
       ref={ref}
-      className={className + " cursor-pointer"}
+      className={
+        className +
+        " cursor-pointer relative top-[3px] mr-[10px] w-[17px] h-[17px] border border-[#E6E6E6]"
+      }
       {...rest}
     />
   );
 }
 const defaultColumns: ColumnDef<CustomFile>[] = [
   {
-    id: "select",
+    accessorKey: "title",
+    header: "Title",
+    enableResizing: true,
     cell: ({ row }) => (
-      <div className="px-1">
+      <div
+        className="overflow-hidden whitespace-nowrap text-ellipsis"
+        style={{ width: "100px" }}
+      >
         <IndeterminateCheckbox
           {...{
             checked: row.getIsSelected(),
@@ -181,14 +190,9 @@ const defaultColumns: ColumnDef<CustomFile>[] = [
             onChange: row.getToggleSelectedHandler(),
           }}
         />
+        {row.original.title}
       </div>
     ),
-  },
-  {
-    accessorKey: "title",
-    header: "Title",
-    enableResizing: true,
-    cell: ({ row: { original } }) => <span className="">{original.title}</span>,
   },
   {
     accessorKey: "author",
@@ -249,6 +253,17 @@ const defaultColumns: ColumnDef<CustomFile>[] = [
   {
     accessorKey: "tags",
     header: "Tags",
+    cell: ({ row }) => (
+      <div className="flex flex-wrap items-center bg-[#5D82EE]/20 rounded-md justify-center gap-0.5 p-1">
+        {row.original.tags.map((tag) => {
+          return (
+            <div className="text-[#5D82EE] text-xs" key={tag}>
+              {tag}
+            </div>
+          );
+        })}
+      </div>
+    ),
   },
   {
     id: "actions",
@@ -257,8 +272,11 @@ const defaultColumns: ColumnDef<CustomFile>[] = [
     cell: () => {
       return (
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
+          <DropdownMenuTrigger asChild className="">
+            <Button
+              variant="ghost"
+              className="h-8 w-full p-0  flex justify-end pr-4  focus-visible:ring-0"
+            >
               <span className="sr-only">Open menu</span>
               <EllipsisHorizontalIcon />
             </Button>
@@ -343,36 +361,40 @@ const VirtualTable = () => {
     setRowSelection({});
   };
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files && event.target.files[0]) {
-      const file = event.target.files[0];
-      const fileData = {
-        name: file.name,
-        size:
-          file.size > 1024 * 1024
-            ? `${(file.size / 1024 / 1024).toFixed(2)} MB`
-            : `${(file.size / 1024).toFixed(2)} KB`,
-        type: file.type,
-      };
+  const handleFileChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      if (event.target.files && event.target.files[0]) {
+        const file = event.target.files[0];
+        const fileData = {
+          name: file.name,
+          size:
+            file.size > 1024 * 1024
+              ? `${(file.size / 1024 / 1024).toFixed(2)} MB`
+              : `${(file.size / 1024).toFixed(2)} KB`,
+          type: file.type,
+        };
 
-      const data = {
-        ...fileData,
-        title: "Burns’ Pediatric Primary Care",
-        author: "Linsley",
-        createdAt: formatDate(new Date()),
-        uploadedAt: formatDate(new Date()),
-        status: "Indexed" as Status,
-        tags: ["tag1", "tag2", "tag3"],
-      };
+        const data = {
+          ...fileData,
+          title: "Burns’ Pediatric Primary Care",
+          author: "Linsley",
+          createdAt: formatDate(new Date()),
+          uploadedAt: formatDate(new Date()),
+          status: "Indexed" as Status,
+          tags: ["tag1", "tag2", "tag3"],
+        };
 
-      setData((prev) => [...prev, data]);
-    }
-  };
+        setData((prev) => [...prev, data]);
+      }
+    },
+    []
+  );
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
   };
 
   const divRef = useRef<HTMLDivElement>(null);
+  const [domRect] = useDomRect(divRef);
 
   return (
     <div
@@ -385,10 +407,16 @@ const VirtualTable = () => {
         handleFileChange={handleFileChange}
         handleSearchChange={handleSearchChange}
       />
-      <Table>
-        <THead className="text-[#101010] sticky top-0 z-10 bg-white">
+      <Table
+        {...{
+          style: {
+            width: domRect?.width || table.getCenterTotalSize(),
+          },
+        }}
+      >
+        <THead className="text-[#101010]  sticky top-0 z-10 bg-white ">
           {table.getHeaderGroups().map((headerGroup) => (
-            <Tr key={headerGroup.id}>
+            <Tr key={headerGroup.id} className=" rounded-lg">
               {headerGroup.headers.map((header) => (
                 <Th
                   isResizable

@@ -5,6 +5,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/providers/theme-provider";
 import { CustomAside } from "@/components/sidebar";
 import { Header } from "@/components/header";
+import ProgressModal from "@/components/progress-modal";
 // Import Inter font from Google Fonts
 const inter = Inter({
   subsets: ["latin"],
@@ -24,9 +25,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${inter.variable} ${inter.className} antialiased`}
-      >
+      <body className={`${inter.variable} ${inter.className} antialiased`}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <div className="flex h-screen">
             <CustomAside />
@@ -35,6 +34,7 @@ export default function RootLayout({
               <main className="flex overflow-y-auto p-4 transition-[margin] w-full duration-300 ease-in-out group-[[data-collapsible=icon]]:ml-[--sidebar-width-icon]">
                 {children}
               </main>
+              <ProgressModal />
             </div>
           </div>
         </ThemeProvider>
