@@ -1,5 +1,6 @@
 import React, {
   FC,
+  forwardRef,
   HTMLAttributes,
   ReactNode,
   TableHTMLAttributes,
@@ -63,17 +64,17 @@ interface ITrProps extends HTMLAttributes<HTMLTableRowElement> {
   children: ReactNode;
   className?: string;
 }
-export const Tr: FC<ITrProps> = (props) => {
+export const Tr = forwardRef<HTMLTableRowElement, ITrProps>((props, ref) => {
   const { children, className, ...rest } = props;
 
   const classes = cn("group/Tr", className);
 
   return (
-    <tr data-component-name="Table/Tr" className={classes} {...rest}>
+    <tr data-component-name="Table/Tr" className={classes} ref={ref} {...rest}>
       {children}
     </tr>
   );
-};
+});
 Tr.displayName = "Tr";
 
 interface IThProps extends ThHTMLAttributes<HTMLTableHeaderCellElement> {
@@ -122,6 +123,7 @@ export const ThResizer: FC<IThResizerProps> = (props) => {
         "h-full w-0.5",
         "cursor-col-resize touch-none select-none",
         "rounded-full bg-[#C0C0C0]",
+        "[@media(hover:hover){&:hover}]:bg-blue-500",
         "[@media(hover:hover){&:hover}]:opacity-100",
         { "bg-blue-500": isResizing, "opacity-100": isResizing },
         className
@@ -147,7 +149,7 @@ export const Td: FC<ITdProps> = (props) => {
     "group-hover/Tr:bg-zinc-500/10",
     "dark:group-even/Tr:bg-zinc-950/50",
     "dark:group-hover/Tr:bg-zinc-950/90",
-    "p-2.5",
+    "p-2.5 ",
     className
   );
 

@@ -1,14 +1,26 @@
 "use client";
-import React from "react";
+import React, { useState } from "react";
 import { Progress } from "./ui/progress";
 import { DuoFlower2 } from "@/assets/icons/duotone";
 import { Button } from "./ui/button";
 import { MinusIcon } from "@heroicons/react/16/solid";
 
 export default function ProgressModal() {
+  const [isVisible, setIsVisible] = useState(true);
+
+  const handleClose = () => {
+    setIsVisible(false);
+  };
+
+  if (!isVisible) return null;
+
   return (
     <div className="border border-gray-200 flex relative items-center flex-col max-w-[404px] w-full ml-auto p-[19px_15px_35px] mt-auto mb-[40px] mr-[22px] rounded">
-      <Button variant={"ghost"} className="absolute right-0 top-0">
+      <Button
+        variant={"ghost"}
+        className="absolute right-0 top-0"
+        onClick={handleClose}
+      >
         <MinusIcon />
       </Button>
       <div className="max-w-[274px]">

@@ -1,6 +1,7 @@
 "use client";
-import React, { HTMLProps, useCallback, useRef } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import {
+  CellContext,
   ColumnDef,
   ColumnResizeMode,
   flexRender,
@@ -9,328 +10,210 @@ import {
   SortingState,
   useReactTable,
 } from "@tanstack/react-table";
-import Table, {
-  TBody,
-  Td,
-  TFoot,
-  Th,
-  THead,
-  ThResizer,
-  Tr,
-} from "@/components/ui/table";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuPortal,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
-  DropdownMenuTrigger,
-} from "./ui/dropdown-menu";
-import { Button } from "./ui/button";
-import {
-  ArrowDownIcon,
-  ArrowTopRightOnSquareIcon,
-  ArrowUpIcon,
-  EllipsisHorizontalIcon,
-  FolderIcon,
-  PencilSquareIcon,
-} from "@heroicons/react/24/outline";
+import Table, { TBody, Th, THead, ThResizer, Tr } from "@/components/ui/table";
+
+import { ArrowUpIcon } from "@heroicons/react/24/outline";
 import { Toolbar } from "./toolbar";
 import { AtSymbolIcon } from "@heroicons/react/16/solid";
 import {
   DuoDoubleCheck,
   DuoFolderError,
+  DuoGroupFolders,
   DuoWaiting,
 } from "@/assets/icons/duotone";
-import useDomRect from "@/hooks/use-dom-rect";
+import { DndProvider } from "react-dnd";
+import { HTML5Backend } from "react-dnd-html5-backend";
+import Each from "./widgets/each";
+import DraggableRow from "./draggable-row";
+import { CustomFile, Status } from "@/types/filedata.type";
+import formatDate from "@/utils/format-date";
+import defaultData from "@/default/data";
+import filterData from "@/utils/filter-data";
+import IndeterminateCheckbox from "./indeterminate-checkbox";
+import TableMenu from "./table-menu";
 
-type Status = "Indexed" | "Processing" | "FileError";
-
-interface CustomFile extends Pick<File, "name" | "type"> {
-  title: string;
-  author: string;
-  createdAt: string;
-  uploadedAt: string;
-  status: Status;
-  tags: string[];
-  size: string;
-}
-
-const formatDate = (date: Date): string => {
-  const options: Intl.DateTimeFormatOptions = {
-    year: "numeric",
-    month: "short",
-    day: "2-digit",
-  };
-  return date
-    .toLocaleDateString("en-US", options)
-    .toUpperCase()
-    .replace(/ ,/g, "-"); // Replace spaces with hyphens
-};
-
-const filterData = (data: CustomFile[], searchQuery: string) => {
-  const query = searchQuery.toLowerCase();
-  const searchableFields = [
-    "title",
-    "author",
-    "name",
-    "type",
-    "size",
-    "status",
-    "tags",
-  ];
-
-  return data.filter((item) =>
-    searchableFields.some((field) => {
-      if (field === "tags" && Array.isArray(item[field])) {
-        return (item[field] as string[]).some((tag) =>
-          tag.toLowerCase().includes(query.toLowerCase())
-        );
-      }
-
-      const value = item[field as keyof CustomFile];
-      return (
-        typeof value === "string" &&
-        value.toLowerCase().includes(query.toLowerCase())
-      );
-    })
-  );
-};
-
-const defaultData: CustomFile[] = [
-  {
-    title: "Burns’ Pediatric Primary Care",
-    author: "Linsley",
-    name: "Burns",
-    type: "PDF",
-    size: "41",
-    createdAt: formatDate(new Date()),
-    uploadedAt: formatDate(new Date()),
-    status: "Indexed",
-    tags: ["tag1", "tag2", "tag3"],
-  },
-  {
-    title: "Alice",
-    author: "Johnson",
-    name: "Doe",
-    type: "Word Document",
-    size: "15",
-    createdAt: formatDate(new Date()),
-    uploadedAt: formatDate(new Date()),
-    status: "Processing",
-    tags: ["work", "important"],
-  },
-  {
-    title: "Bob",
-    author: "Smith",
-    name: "Foster",
-    type: "Image",
-    size: "5",
-    createdAt: formatDate(new Date()),
-    uploadedAt: formatDate(new Date()),
-    status: "Processing",
-    tags: ["photo", "nature"],
-  },
-  {
-    title: "Emily",
-    author: "Davis",
-    name: "Grant",
-    type: "Spreadsheet",
-    size: "25",
-    createdAt: formatDate(new Date()),
-    uploadedAt: formatDate(new Date()),
-    status: "FileError",
-    tags: ["finance", "report"],
-  },
-];
-
-function IndeterminateCheckbox({
-  indeterminate,
-  className = "",
-  ...rest
-}: { indeterminate?: boolean } & HTMLProps<HTMLInputElement>) {
-  const ref = React.useRef<HTMLInputElement>(null!);
-
+const TableCell = ({
+  getValue,
+  row,
+  column,
+  table,
+  editableId,
+}: CellContext<CustomFile, unknown> & { editableId: string }) => {
+  const initialValue = getValue<string>();
+  const [value, setValue] = React.useState(initialValue);
   React.useEffect(() => {
-    if (typeof indeterminate === "boolean") {
-      ref.current.indeterminate = !rest.checked && indeterminate;
-    }
-  }, [ref, indeterminate, rest.checked]);
+    setValue(initialValue);
+  }, [initialValue]);
+  const onBlur = () => {
+    const meta = table.options.meta as unknown as {
+      updateData: (idx: number, id: string, value: string) => void;
+    };
+    meta?.updateData(row.index, column.id, value);
+  };
 
   return (
-    <input
-      type="checkbox"
-      ref={ref}
-      className={
-        className +
-        " cursor-pointer relative top-[3px] mr-[10px] w-[17px] h-[17px] border border-[#E6E6E6]"
-      }
-      {...rest}
-    />
-  );
-}
-const defaultColumns: ColumnDef<CustomFile>[] = [
-  {
-    accessorKey: "title",
-    header: "Title",
-    enableResizing: true,
-    cell: ({ row }) => (
-      <div
-        className="overflow-hidden whitespace-nowrap text-ellipsis"
-        style={{ width: "100px" }}
-      >
-        <IndeterminateCheckbox
-          {...{
-            checked: row.getIsSelected(),
-            disabled: !row.getCanSelect(),
-            indeterminate: row.getIsSomeSelected(),
-            onChange: row.getToggleSelectedHandler(),
-          }}
+    <>
+      {editableId === initialValue && !row.original.isCollection ? (
+        <input
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onBlur={onBlur}
         />
-        {row.original.title}
-      </div>
-    ),
-  },
-  {
-    accessorKey: "author",
-    header: "Author",
-    enableResizing: false,
-  },
-  {
-    accessorKey: "name",
-    header: () => (
-      <div className="flex gap- items-center">
-        <AtSymbolIcon className="size-[20px]" />
-        Name
-      </div>
-    ),
-  },
-  {
-    accessorKey: "type",
-    header: "File Type",
-  },
-  {
-    accessorKey: "size",
-    header: "Size",
-  },
-  {
-    accessorKey: "createdAt",
-    header: "Created At",
-  },
-  {
-    accessorKey: "uploadedAt",
-    header: "Uploaded At",
-  },
-  {
-    accessorKey: "status",
-    header: "Status",
-    cell: ({ row: { original } }) => {
-      const iconClassName = "size-[20px]";
-      const renderStatusIcon = (status: Status) => {
-        switch (status) {
-          case "Indexed":
-            return <DuoDoubleCheck className={iconClassName} />;
-          case "Processing":
-            return <DuoWaiting className={iconClassName} />;
-          case "FileError":
-            return <DuoFolderError className={iconClassName} />;
-          default:
-            return null;
-        }
-      };
-
-      return (
-        <div className="flex items-center space-x-2">
-          {renderStatusIcon(original.status)}
-          <span>{original.status}</span>
-        </div>
-      );
-    },
-  },
-  {
-    accessorKey: "tags",
-    header: "Tags",
-    cell: ({ row }) => (
-      <div className="flex flex-wrap items-center bg-[#5D82EE]/20 rounded-md justify-center gap-0.5 p-1">
-        {row.original.tags.map((tag) => {
-          return (
-            <div className="text-[#5D82EE] text-xs" key={tag}>
-              {tag}
-            </div>
-          );
-        })}
-      </div>
-    ),
-  },
-  {
-    id: "actions",
-    enableHiding: false,
-    enableSorting: false,
-    cell: () => {
-      return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild className="">
-            <Button
-              variant="ghost"
-              className="h-8 w-full p-0  flex justify-end pr-4  focus-visible:ring-0"
-            >
-              <span className="sr-only">Open menu</span>
-              <EllipsisHorizontalIcon />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-56">
-            <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <PencilSquareIcon />
-                <span>Rename</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <AtSymbolIcon />
-                <span>Add @Name</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <ArrowTopRightOnSquareIcon />
-                <span>View File</span>
-              </DropdownMenuItem>
-              <DropdownMenuSub>
-                <DropdownMenuSubTrigger>
-                  <FolderIcon />
-                  <span>Manage Collection</span>
-                </DropdownMenuSubTrigger>
-                <DropdownMenuPortal>
-                  <DropdownMenuSubContent>
-                    <DropdownMenuItem>
-                      <span>Remove from collection</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <span>Move to</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuSubContent>
-                </DropdownMenuPortal>
-              </DropdownMenuSub>
-            </DropdownMenuGroup>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      );
-    },
-  },
-];
+      ) : (
+        <span>{value}</span>
+      )}
+    </>
+  );
+};
 
 const VirtualTable = () => {
   const [data, setData] = React.useState<CustomFile[]>(() => [...defaultData]);
-  const [columns] = React.useState<typeof defaultColumns>(() => [
-    ...defaultColumns,
-  ]);
+
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [searchQuery, setSearchQuery] = React.useState("");
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnResizeMode] = React.useState<ColumnResizeMode>("onChange");
+  const [, setCollection] = React.useState<CustomFile[]>([]);
+  const [editableId, setEditableId] = useState("");
+
+  const handleEditClick = useCallback((id: string) => {
+    setEditableId(id);
+    console.log(id);
+  }, []);
+
+  const handleDrop = useCallback(
+    (id: string) => {
+      const droppedItem = data.find((item) => item.title === id);
+      if (droppedItem) {
+        setCollection((prev) => [...prev, droppedItem]);
+        setData((prev) => prev.filter((item) => item.title !== id));
+      }
+    },
+    [data]
+  );
+
+  const defaultColumns: ColumnDef<CustomFile>[] = useMemo(
+    () => [
+      {
+        accessorKey: "title",
+        header: () => <div className="text-center">Title</div>,
+        enableResizing: true,
+        cell: ({ row }) => (
+          <div
+            className="overflow-hidden whitespace-nowrap text-ellipsis"
+            style={{ width: "200px" }}
+          >
+            <div className="flex items-center  gap-1">
+              <IndeterminateCheckbox
+                {...{
+                  checked: row.getIsSelected(),
+                  disabled: !row.getCanSelect(),
+                  indeterminate: row.getIsSomeSelected(),
+                  onChange: row.getToggleSelectedHandler(),
+                }}
+              />
+              {row.original.isCollection ? (
+                <DuoGroupFolders className="size-5" />
+              ) : null}
+              {row.original.title}
+            </div>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "author",
+        header: "Author",
+        enableResizing: false,
+      },
+      {
+        accessorKey: "name",
+        header: () => (
+          <div className="flex gap-1 items-center">
+            <AtSymbolIcon className="size-[20px]" />
+            Name
+          </div>
+        ),
+        cell: (props) => <TableCell {...props} editableId={editableId} />,
+      },
+      {
+        accessorKey: "type",
+        header: "File Type",
+      },
+      {
+        accessorKey: "size",
+        header: "Size",
+      },
+      {
+        accessorKey: "createdAt",
+        header: "Created At",
+      },
+      {
+        accessorKey: "uploadedAt",
+        header: "Uploaded At",
+      },
+      {
+        accessorKey: "status",
+        header: "Status",
+        cell: ({ row: { original } }) => {
+          const iconClassName = "size-[20px]";
+          const renderStatusIcon = (status: Status) => {
+            switch (status) {
+              case "Indexed":
+                return <DuoDoubleCheck className={iconClassName} />;
+              case "Processing":
+                return <DuoWaiting className={iconClassName} />;
+              case "FileError":
+                return <DuoFolderError className={iconClassName} />;
+              default:
+                return null;
+            }
+          };
+
+          return (
+            <div className="flex items-center space-x-2">
+              {renderStatusIcon(original.status)}
+              <span>{original.status}</span>
+            </div>
+          );
+        },
+      },
+      {
+        accessorKey: "tags",
+        header: "Tags",
+        cell: ({ row }) => (
+          <>
+            {row.original.tags.length ? (
+              <div className="flex flex-wrap items-center bg-[#5D82EE]/20 rounded-md justify-center gap-0.5 p-1">
+                {row.original.tags.map((tag) => {
+                  return (
+                    <div className="text-[#5D82EE] text-xs" key={tag}>
+                      {tag}
+                    </div>
+                  );
+                })}
+              </div>
+            ) : null}
+          </>
+        ),
+      },
+      {
+        id: "actions",
+        enableHiding: false,
+        enableSorting: false,
+        cell: ({ row: { original } }) => (
+          <TableMenu row={original} handleEditClick={handleEditClick} />
+        ),
+      },
+    ],
+    [editableId, handleEditClick]
+  );
+  const updatedData = useMemo(
+    () => filterData(data, searchQuery),
+    [data, searchQuery]
+  );
   const table = useReactTable({
-    data: filterData(data, searchQuery),
-    columns,
+    data: updatedData,
+    columns: defaultColumns,
     defaultColumn: {
       minSize: 0,
       maxSize: 800,
@@ -345,8 +228,25 @@ const VirtualTable = () => {
       sorting,
       rowSelection,
     },
+
+    meta: {
+      updateData: (rowIndex: number, columnId: string, value: string) => {
+        setData((old) =>
+          old.map((row, index) => {
+            if (index === rowIndex) {
+              return {
+                ...old[rowIndex],
+                [columnId]: value,
+              };
+            }
+            return row;
+          })
+        );
+      },
+    },
   });
-  const deleteSelectedRows = () => {
+
+  const deleteSelectedRows = useCallback(() => {
     const selectedRowIds = Object.keys(rowSelection);
     if (selectedRowIds.length > 0) {
       const newData = data.filter(
@@ -355,11 +255,11 @@ const VirtualTable = () => {
       setData(newData);
       setRowSelection({}); // Reset row selection
     }
-  };
+  }, [data, rowSelection]);
 
-  const clearSelection = () => {
+  const clearSelection = useCallback(() => {
     setRowSelection({});
-  };
+  }, []);
 
   const handleFileChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -382,6 +282,7 @@ const VirtualTable = () => {
           uploadedAt: formatDate(new Date()),
           status: "Indexed" as Status,
           tags: ["tag1", "tag2", "tag3"],
+          isCollection: false,
         };
 
         setData((prev) => [...prev, data]);
@@ -389,18 +290,15 @@ const VirtualTable = () => {
     },
     []
   );
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value);
-  };
-
-  const divRef = useRef<HTMLDivElement>(null);
-  const [domRect] = useDomRect(divRef);
+  const handleSearchChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setSearchQuery(e.target.value);
+    },
+    []
+  );
 
   return (
-    <div
-      ref={divRef}
-      className="flex flex-col gap-4 max-h-[700px] overflow-y-auto"
-    >
+    <div className="flex flex-col gap-4 max-h-[700px] overflow--auto">
       <Toolbar
         deleteSelectedRows={deleteSelectedRows}
         clearSelection={clearSelection}
@@ -410,104 +308,87 @@ const VirtualTable = () => {
       <Table
         {...{
           style: {
-            width: domRect?.width || table.getCenterTotalSize(),
+            width: table.getTotalSize(),
           },
         }}
       >
-        <THead className="text-[#101010]  sticky top-0 z-10 bg-white ">
-          {table.getHeaderGroups().map((headerGroup) => (
-            <Tr key={headerGroup.id} className=" rounded-lg">
-              {headerGroup.headers.map((header) => (
-                <Th
-                  isResizable
-                  key={header.id}
-                  {...{
-                    colSpan: header.colSpan,
-                    style: {
-                      width: header.getSize(),
-                    },
-                  }}
-                >
-                  {header.isPlaceholder ? null : (
-                    <div
-                      className={
-                        header.column.getCanSort()
-                          ? "cursor-pointer select-none flex items-center justify-center"
-                          : ""
-                      }
-                      onClick={header.column.getToggleSortingHandler()}
-                      title={
-                        header.column.getCanSort()
-                          ? header.column.getNextSortingOrder() === "asc"
-                            ? "Sort ascending"
-                            : header.column.getNextSortingOrder() === "desc"
-                            ? "Sort descending"
-                            : "Clear sort"
-                          : undefined
-                      }
-                    >
-                      {flexRender(
-                        header.column.columnDef.header,
-                        header.getContext()
-                      )}
-                      <span className="ml-2">
-                        {
-                          {
-                            asc: <ArrowUpIcon className=" w-4 h-4" />,
-                            desc: <ArrowDownIcon className=" w-4 h-4" />,
-                          }[header.column.getIsSorted() as string]
+        <THead className="text-[#101010]  sticky top-0 z-10 bg-white">
+          <Each
+            of={table.getHeaderGroups()}
+            render={(headerGroup) => (
+              <Tr key={headerGroup.id} className=" rounded-lg">
+                {headerGroup.headers.map((header) => (
+                  <Th
+                    className="text-nowrap"
+                    isResizable
+                    key={header.id}
+                    {...{
+                      colSpan: header.colSpan,
+                      style: {
+                        width: header.getSize(),
+                      },
+                    }}
+                  >
+                    {header.isPlaceholder ? null : (
+                      <div
+                        className={
+                          header.column.getCanSort()
+                            ? "cursor-pointer select-none flex items-center justify-center"
+                            : ""
                         }
-                      </span>
-                    </div>
-                  )}
-                  {header.column.columnDef.enableResizing && (
-                    <ThResizer
-                      isResizing={header.column.getIsResizing()}
-                      {...{
-                        onMouseDown: header.getResizeHandler(),
-                        onTouchStart: header.getResizeHandler(),
-                      }}
-                    />
-                  )}
-                </Th>
-              ))}
-            </Tr>
-          ))}
+                        onClick={header.column.getToggleSortingHandler()}
+                        title={
+                          header.column.getCanSort()
+                            ? header.column.getNextSortingOrder() === "asc"
+                              ? "Sort ascending"
+                              : header.column.getNextSortingOrder() === "desc"
+                              ? "Sort descending"
+                              : "Clear sort"
+                            : undefined
+                        }
+                      >
+                        {flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
+                        {header.column.getCanSort() && (
+                          <span className="ml-2 flex items-center">
+                            <ArrowUpIcon
+                              className={`w-4 h-4 ${
+                                header.column.getIsSorted() === "asc"
+                                  ? "rotate-180"
+                                  : ""
+                              }`}
+                            />
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    {header.column.columnDef.enableResizing && (
+                      <ThResizer
+                        isResizing={header.column.getIsResizing()}
+                        {...{
+                          onMouseDown: header.getResizeHandler(),
+                          onTouchStart: header.getResizeHandler(),
+                        }}
+                      />
+                    )}
+                  </Th>
+                ))}
+              </Tr>
+            )}
+          />
         </THead>
-        <TBody className="text-[#636262] text-base font-normal">
-          {table.getRowModel().rows.map((row) => (
-            <Tr key={row.id}>
-              {row.getVisibleCells().map((cell) => (
-                <Td
-                  key={cell.id}
-                  {...{
-                    style: {
-                      width: cell.column.getSize(),
-                    },
-                  }}
-                >
-                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                </Td>
-              ))}
-            </Tr>
-          ))}
-        </TBody>
-        <TFoot>
-          {table.getFooterGroups().map((footerGroup) => (
-            <Tr key={footerGroup.id}>
-              {footerGroup.headers.map((header) => (
-                <Th key={header.id} className="text-left">
-                  {header.isPlaceholder
-                    ? null
-                    : flexRender(
-                        header.column.columnDef.footer,
-                        header.getContext()
-                      )}
-                </Th>
-              ))}
-            </Tr>
-          ))}
-        </TFoot>
+        <DndProvider backend={HTML5Backend}>
+          <TBody className="text-[#636262] text-base font-normal">
+            <Each
+              of={table.getRowModel().rows}
+              render={(row) => {
+                return <DraggableRow row={row} handleDrop={handleDrop} />;
+              }}
+            />
+          </TBody>
+        </DndProvider>
       </Table>
     </div>
   );

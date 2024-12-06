@@ -17,7 +17,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Bars3Icon } from "@heroicons/react/24/outline";
+import { Bars3BottomRightIcon } from "@heroicons/react/24/outline";
 
 const SIDEBAR_COOKIE_NAME = "sidebar:state";
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
@@ -278,7 +278,7 @@ const SidebarTrigger = React.forwardRef<
       }}
       {...props}
     >
-      <Bars3Icon className="!size-[20px]" />
+      <Bars3BottomRightIcon className="!size-[20px]" />
       <span className="sr-only">Toggle Sidebar</span>
     </Button>
   );
