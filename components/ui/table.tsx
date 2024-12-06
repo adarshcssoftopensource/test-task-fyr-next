@@ -1,131 +1,121 @@
-import React, {
-  FC,
-  forwardRef,
-  HTMLAttributes,
-  ReactNode,
-  TableHTMLAttributes,
-  TdHTMLAttributes,
-  ThHTMLAttributes,
-} from "react";
+import React, { FC, forwardRef, HTMLAttributes, ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-interface ITHeadProps extends HTMLAttributes<HTMLTableSectionElement> {
+interface IHeaderProps extends HTMLAttributes<HTMLDivElement> {
   children: ReactNode;
   className?: string;
 }
-export const THead: FC<ITHeadProps> = (props) => {
+
+export const Header: FC<IHeaderProps> = (props) => {
   const { children, className, ...rest } = props;
-
-  const classes = cn(className);
-
+  const classes = cn("flex w-full border-b", className); // Using flexbox for header section
   return (
-    <thead data-component-name="Table/THead" className={classes} {...rest}>
+    <div data-component-name="Table/Header" className={classes} {...rest}>
       {children}
-    </thead>
+    </div>
   );
 };
-THead.displayName = "THead";
 
-interface ITBodyProps extends HTMLAttributes<HTMLTableSectionElement> {
+Header.displayName = "Header";
+
+interface IBodyProps extends HTMLAttributes<HTMLDivElement> {
   children: ReactNode;
   className?: string;
 }
-export const TBody: FC<ITBodyProps> = (props) => {
+
+export const Body: FC<IBodyProps> = (props) => {
   const { children, className, ...rest } = props;
-
-  const classes = cn(className);
-
+  const classes = cn("flex flex-col w-full", className); // Using flexbox for body section
   return (
-    <tbody data-component-name="Table/TBody" className={classes} {...rest}>
+    <div data-component-name="Table/Body" className={classes} {...rest}>
       {children}
-    </tbody>
+    </div>
   );
 };
-TBody.displayName = "TBody";
 
-interface ITFootProps extends HTMLAttributes<HTMLTableSectionElement> {
+Body.displayName = "Body";
+
+interface IFooterProps extends HTMLAttributes<HTMLDivElement> {
   children: ReactNode;
   className?: string;
 }
-export const TFoot: FC<ITFootProps> = (props) => {
+
+export const Footer: FC<IFooterProps> = (props) => {
   const { children, className, ...rest } = props;
-
-  const classes = cn(className);
-
+  const classes = cn("flex w-full border-t", className); // Using flexbox for footer section
   return (
-    <thead data-component-name="Table/TFoot" className={classes} {...rest}>
+    <div data-component-name="Table/Footer" className={classes} {...rest}>
       {children}
-    </thead>
+    </div>
   );
 };
-TFoot.displayName = "TFoot";
 
-interface ITrProps extends HTMLAttributes<HTMLTableRowElement> {
+Footer.displayName = "Footer";
+
+interface IRowProps extends HTMLAttributes<HTMLDivElement> {
   children: ReactNode;
   className?: string;
 }
-export const Tr = forwardRef<HTMLTableRowElement, ITrProps>((props, ref) => {
+
+export const Row = forwardRef<HTMLDivElement, IRowProps>((props, ref) => {
   const { children, className, ...rest } = props;
-
-  const classes = cn("group/Tr", className);
-
+  const classes = cn("flex w-full", className); // Row will be a flex container to hold the cells
   return (
-    <tr data-component-name="Table/Tr" className={classes} ref={ref} {...rest}>
+    <div
+      data-component-name="Table/Row"
+      className={classes}
+      ref={ref}
+      {...rest}
+    >
       {children}
-    </tr>
+    </div>
   );
 });
-Tr.displayName = "Tr";
 
-interface IThProps extends ThHTMLAttributes<HTMLTableHeaderCellElement> {
+Row.displayName = "Row";
+
+interface IHeaderCellProps extends HTMLAttributes<HTMLDivElement> {
   children: ReactNode;
   className?: string;
   isResizable?: boolean;
-  isColumnBorder?: boolean;
 }
-export const Th: FC<IThProps> = (props) => {
+
+export const HeaderCell: FC<IHeaderCellProps> = (props) => {
   const { children, className, isResizable = false, ...rest } = props;
-
   const classes = cn(
-    "bg-zinc-950/10",
-    "dark:bg-zinc-950/90",
-    "p-4 ",
-    "[&:first-child]:rounded-tl [&:first-child]:rounded-bl [&:last-child]:rounded-tr [&:last-child]:rounded-br",
-    "ltr:group-[&:first-child]/Tr:[&:first-child]:rounded-tl ltr:group-[&:first-child]/Tr:[&:last-child]:rounded-tr-xl",
-    "ltr:group-[&:last-child]/Tr:[&:first-child]:rounded-bl-xl ltr:group-[&:last-child]/Tr:[&:last-child]:rounded-br-xl",
-    "rtl:group-[&:first-child]/Tr:[&:first-child]:rounded-tr-xl rtl:group-[&:first-child]/Tr:[&:last-child]:rounded-tl-xl",
-    "rtl:group-[&:last-child]/Tr:[&:first-child]:rounded-br-xl rtl:group-[&:last-child]/Tr:[&:last-child]:rounded-bl-xl",
-
+    "p-4 bg-zinc-950/10 dark:bg-zinc-950/90 ",
+    "flex text-left",
+    "border-b",
+    "group/[&:first-child]:rounded-tl-lg group/[&:last-child]:rounded-tr-lg", // Rounded corners for first/last cell
     { relative: isResizable },
     className
   );
 
   return (
-    <th data-component-name="Table/Th" className={classes} {...rest}>
+    <div data-component-name="Table/HeaderCell" className={classes} {...rest}>
       {children}
-    </th>
+    </div>
   );
 };
-Th.displayName = "Th";
 
-interface IThResizerProps extends HTMLAttributes<HTMLDivElement> {
+HeaderCell.displayName = "HeaderCell";
+
+interface IResizerProps extends HTMLAttributes<HTMLDivElement> {
   isResizing: boolean;
   className?: string;
   color?: string;
 }
-export const ThResizer: FC<IThResizerProps> = (props) => {
+
+export const Resizer: FC<IResizerProps> = (props) => {
   const { isResizing, className, ...rest } = props;
+
   return (
     <div
-      data-component-name="Table/ThResizer"
+      data-component-name="Table/Resizer"
       className={cn(
-        "absolute -right-0.5 top-0 z-10",
-        "h-full w-0.5",
-        "cursor-col-resize touch-none select-none",
-        "rounded-full bg-[#C0C0C0]",
-        "[@media(hover:hover){&:hover}]:bg-blue-500",
-        "[@media(hover:hover){&:hover}]:opacity-100",
-        { "bg-blue-500": isResizing, "opacity-100": isResizing },
+        "absolute -right-0.5 top-0 z-10 h-full w-0.5 cursor-col-resize",
+        "rounded-full bg-[#C0C0C0] hover:bg-blue-500 ",
+        { "bg-blue-500 opacity-100": isResizing },
         className
       )}
       {...rest}
@@ -133,49 +123,47 @@ export const ThResizer: FC<IThResizerProps> = (props) => {
   );
 };
 
-ThResizer.displayName = "ThResizer";
+Resizer.displayName = "Resizer";
 
-interface ITdProps extends TdHTMLAttributes<HTMLTableDataCellElement> {
+interface ICellProps extends HTMLAttributes<HTMLDivElement> {
   children: ReactNode;
   className?: string;
 }
-export const Td: FC<ITdProps> = (props) => {
-  const { children, className, ...rest } = props;
 
+export const Cell: FC<ICellProps> = (props) => {
+  const { children, className, ...rest } = props;
   const classes = cn(
-    "ltr:[&:first-child]:rounded-l-lg ltr:[&:last-child]:rounded-r-lg",
-    "rtl:[&:first-child]:rounded-r-lg rtl:[&:last-child]:rounded-l-lg",
-    "group-even/Tr:bg-zinc-500/5",
-    "group-hover/Tr:bg-zinc-500/10",
-    "dark:group-even/Tr:bg-zinc-950/50",
-    "dark:group-hover/Tr:bg-zinc-950/90",
-    "p-2.5 ",
+    "flex truncate text-nowrap text-ellipsis overflow-hidden line-clamp-1	 p-2.5",
+    "group-even:bg-zinc-500/5 group-hover:bg-zinc-500/10",
+    "dark:group-even:bg-zinc-950/50 dark:group-hover:bg-zinc-950/90",
+    "border-b", // Border for body cells
     className
   );
 
   return (
-    <td data-component-name="Table/Td" className={classes} {...rest}>
+    <div data-component-name="Table/Cell" className={classes} {...rest}>
       {children}
-    </td>
+    </div>
   );
 };
-Td.displayName = "Td";
 
-export interface ITableProps extends TableHTMLAttributes<HTMLTableElement> {
+Cell.displayName = "Cell";
+
+interface ITableProps extends HTMLAttributes<HTMLDivElement> {
   children: ReactNode;
   className?: string;
 }
+
 const Table: FC<ITableProps> = (props) => {
   const { children, className, ...rest } = props;
-
-  const classes = cn("w-full", className);
-
+  const classes = cn("w-full flex flex-col relative", className);
   return (
-    <table data-component-name="Table" className={classes} {...rest}>
+    <div data-component-name="Table" className={classes} {...rest}>
       {children}
-    </table>
+    </div>
   );
 };
+
 Table.displayName = "Table";
 
 export default Table;

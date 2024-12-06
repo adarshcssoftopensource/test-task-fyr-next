@@ -3,7 +3,7 @@ import formatDate from "@/utils/format-date";
 
 const defaultData: CustomFile[] = [
   {
-    title: "Burns’ ",
+    title: "Burns’ Johnson Alice Doe",
     author: "Linsley",
     name: "Burns",
     type: "PDF",

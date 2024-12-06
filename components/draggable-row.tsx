@@ -1,6 +1,6 @@
 import { flexRender, Row } from "@tanstack/react-table";
 import { useDrag, useDrop } from "react-dnd";
-import { Td, Tr } from "./ui/table";
+import { Row as TableRow, Cell } from "./ui/table";
 import Each from "./widgets/each";
 import { CustomFile } from "@/types/filedata.type";
 const ITEM_TYPE = "ROW";
@@ -34,7 +34,7 @@ const DraggableRow = ({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const rowRef: any = isCollection ? dropRef : dragRef;
   return (
-    <Tr
+    <TableRow
       ref={rowRef}
       className={
         isDragging
@@ -45,7 +45,7 @@ const DraggableRow = ({
       <Each
         of={row.getVisibleCells()}
         render={(cell) => (
-          <Td
+          <Cell
             key={cell.id}
             {...{
               style: {
@@ -54,10 +54,10 @@ const DraggableRow = ({
             }}
           >
             {flexRender(cell.column.columnDef.cell, cell.getContext())}
-          </Td>
+          </Cell>
         )}
       />
-    </Tr>
+    </TableRow>
   );
 };
 

@@ -10,7 +10,13 @@ import {
   SortingState,
   useReactTable,
 } from "@tanstack/react-table";
-import Table, { TBody, Th, THead, ThResizer, Tr } from "@/components/ui/table";
+import Table, {
+  Header,
+  Body,
+  Row,
+  HeaderCell,
+  Resizer,
+} from "@/components/ui/table";
 
 import { ArrowUpIcon } from "@heroicons/react/24/outline";
 import { Toolbar } from "./toolbar";
@@ -99,24 +105,19 @@ const VirtualTable = () => {
         header: () => <div className="text-center">Title</div>,
         enableResizing: true,
         cell: ({ row }) => (
-          <div
-            className="overflow-hidden whitespace-nowrap text-ellipsis"
-            style={{ width: "200px" }}
-          >
-            <div className="flex items-center  gap-1">
-              <IndeterminateCheckbox
-                {...{
-                  checked: row.getIsSelected(),
-                  disabled: !row.getCanSelect(),
-                  indeterminate: row.getIsSomeSelected(),
-                  onChange: row.getToggleSelectedHandler(),
-                }}
-              />
-              {row.original.isCollection ? (
-                <DuoGroupFolders className="size-5" />
-              ) : null}
-              {row.original.title}
-            </div>
+          <div className="flex items-center  gap-1">
+            <IndeterminateCheckbox
+              {...{
+                checked: row.getIsSelected(),
+                disabled: !row.getCanSelect(),
+                indeterminate: row.getIsSomeSelected(),
+                onChange: row.getToggleSelectedHandler(),
+              }}
+            />
+            {row.original.isCollection ? (
+              <DuoGroupFolders className="size-5" />
+            ) : null}
+            <span className=" truncate w-full max-w-[800px]">{row.original.title}</span>
           </div>
         ),
       },
@@ -298,7 +299,7 @@ const VirtualTable = () => {
   );
 
   return (
-    <div className="flex flex-col gap-4 max-h-[700px] overflow--auto">
+    <div className="flex flex-col gap-4 max-h-[700px] overflow-x-auto">
       <Toolbar
         deleteSelectedRows={deleteSelectedRows}
         clearSelection={clearSelection}
@@ -312,13 +313,13 @@ const VirtualTable = () => {
           },
         }}
       >
-        <THead className="text-[#101010]  sticky top-0 z-10 bg-white">
+        <Header className="text-[#101010]  sticky top-0 z-10 bg-white">
           <Each
             of={table.getHeaderGroups()}
             render={(headerGroup) => (
-              <Tr key={headerGroup.id} className=" rounded-lg">
+              <Row key={headerGroup.id} className=" rounded-lg">
                 {headerGroup.headers.map((header) => (
-                  <Th
+                  <HeaderCell
                     className="text-nowrap"
                     isResizable
                     key={header.id}
@@ -365,7 +366,7 @@ const VirtualTable = () => {
                       </div>
                     )}
                     {header.column.columnDef.enableResizing && (
-                      <ThResizer
+                      <Resizer
                         isResizing={header.column.getIsResizing()}
                         {...{
                           onMouseDown: header.getResizeHandler(),
@@ -373,21 +374,21 @@ const VirtualTable = () => {
                         }}
                       />
                     )}
-                  </Th>
+                  </HeaderCell>
                 ))}
-              </Tr>
+              </Row>
             )}
           />
-        </THead>
+        </Header>
         <DndProvider backend={HTML5Backend}>
-          <TBody className="text-[#636262] text-base font-normal">
+          <Body className="text-[#636262] text-base font-normal">
             <Each
               of={table.getRowModel().rows}
               render={(row) => {
                 return <DraggableRow row={row} handleDrop={handleDrop} />;
               }}
             />
-          </TBody>
+          </Body>
         </DndProvider>
       </Table>
     </div>
