@@ -79,7 +79,7 @@ const VirtualTable = () => {
   const [searchQuery, setSearchQuery] = React.useState("");
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnResizeMode] = React.useState<ColumnResizeMode>("onChange");
-  const [, setCollection] = React.useState<CustomFile[]>([]);
+  const [collection, setCollection] = React.useState<CustomFile[]>([]);
   const [editableId, setEditableId] = useState("");
 
   const handleEditClick = useCallback((id: string) => {
@@ -104,6 +104,7 @@ const VirtualTable = () => {
         accessorKey: "title",
         header: () => <div className="text-center">Title</div>,
         enableResizing: true,
+        size: 200,
         cell: ({ row }) => (
           <div className="flex items-center  gap-1">
             <IndeterminateCheckbox
@@ -117,7 +118,10 @@ const VirtualTable = () => {
             {row.original.isCollection ? (
               <DuoGroupFolders className="size-5" />
             ) : null}
-            <span className=" truncate w-full max-w-[800px]">{row.original.title}</span>
+            <span className=" truncate w-full max-w-[800px]">
+              {row.original.title}{" "}
+              {row.original.isCollection ? collection?.length : null}
+            </span>
           </div>
         ),
       },
@@ -206,7 +210,7 @@ const VirtualTable = () => {
         ),
       },
     ],
-    [editableId, handleEditClick]
+    [collection?.length, editableId, handleEditClick]
   );
   const updatedData = useMemo(
     () => filterData(data, searchQuery),
